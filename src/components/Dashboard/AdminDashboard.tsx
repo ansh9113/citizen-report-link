@@ -54,66 +54,14 @@ const AdminDashboard: React.FC = () => {
 
   // Mock data
   const stats: DashboardStats = {
-    totalComplaints: 1247,
-    pending: 89,
-    inProgress: 156,
-    resolved: 1002,
-    avgResolutionTime: 3.2
+    totalComplaints: 0,
+    pending: 0,
+    inProgress: 0,
+    resolved: 0,
+    avgResolutionTime: 0
   };
 
-  const complaints: ComplaintItem[] = [
-    {
-      id: 'CR-2024-001',
-      title: 'Pothole on Main Street',
-      type: 'road',
-      status: 'in-progress',
-      priority: 'high',
-      createdAt: '2024-01-15T10:00:00Z',
-      location: {
-        lat: 22.7196,
-        lng: 75.8577,
-        address: 'Main Street, Indore'
-      },
-      citizen: {
-        name: 'Rahul Sharma',
-        phone: '+91-98765-43210'
-      }
-    },
-    {
-      id: 'CR-2024-002',
-      title: 'Street Light Not Working',
-      type: 'streetlight',
-      status: 'submitted',
-      priority: 'medium',
-      createdAt: '2024-01-16T15:30:00Z',
-      location: {
-        lat: 22.7206,
-        lng: 75.8587,
-        address: 'Park Street, Indore'
-      },
-      citizen: {
-        name: 'Priya Patel',
-        phone: '+91-98765-43211'
-      }
-    },
-    {
-      id: 'CR-2024-003',
-      title: 'Water Leakage',
-      type: 'water',
-      status: 'resolved',
-      priority: 'high',
-      createdAt: '2024-01-14T08:15:00Z',
-      location: {
-        lat: 22.7186,
-        lng: 75.8567,
-        address: 'Gandhi Road, Indore'
-      },
-      citizen: {
-        name: 'Amit Kumar',
-        phone: '+91-98765-43212'
-      }
-    }
-  ];
+  const complaints: ComplaintItem[] = [];
 
   const mapMarkers = complaints.map(complaint => ({
     id: complaint.id,

@@ -19,10 +19,10 @@ import Footer from '@/components/Layout/Footer';
 
 const Home: React.FC = () => {
   const stats = [
-    { label: 'Total Complaints', value: '1,247', icon: MessageSquare, change: '+12%' },
-    { label: 'Resolved Issues', value: '1,002', icon: CheckCircle, change: '+18%' },
-    { label: 'Active Citizens', value: '3,456', icon: Users, change: '+25%' },
-    { label: 'Avg Resolution', value: '3.2 days', icon: Clock, change: '-15%' }
+    { label: 'Total Complaints', value: '0', icon: MessageSquare, change: '+0%' },
+    { label: 'Resolved Issues', value: '0', icon: CheckCircle, change: '+0%' },
+    { label: 'Active Citizens', value: '0', icon: Users, change: '+0%' },
+    { label: 'Avg Resolution', value: '0 days', icon: Clock, change: '+0%' }
   ];
 
   const features = [
@@ -48,32 +48,7 @@ const Home: React.FC = () => {
     }
   ];
 
-  const recentComplaints = [
-    {
-      id: 'CR-2024-001',
-      title: 'Pothole on Main Street',
-      location: 'Indore, MP',
-      status: 'In Progress',
-      priority: 'High',
-      date: '2 days ago'
-    },
-    {
-      id: 'CR-2024-002',
-      title: 'Street Light Not Working',
-      location: 'Bhopal, MP',
-      status: 'Resolved',
-      priority: 'Medium',
-      date: '1 day ago'
-    },
-    {
-      id: 'CR-2024-003',
-      title: 'Water Supply Issue',
-      location: 'Ujjain, MP',
-      status: 'Submitted',
-      priority: 'High',
-      date: '3 hours ago'
-    }
-  ];
+  const recentComplaints: any[] = [];
 
   return (
     <div className="min-h-screen bg-gradient-subtle">
@@ -168,45 +143,53 @@ const Home: React.FC = () => {
           </div>
           
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {recentComplaints.map((complaint, index) => (
-              <Card key={index} className="hover:shadow-elegant transition-smooth">
-                <CardContent className="p-6">
-                  <div className="flex justify-between items-start mb-3">
-                    <h3 className="font-semibold text-foreground">{complaint.title}</h3>
-                    <Badge 
-                      variant="secondary"
-                      className={
-                        complaint.status === 'Resolved' ? 'bg-green-100 text-green-800' :
-                        complaint.status === 'In Progress' ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-blue-100 text-blue-800'
-                      }
-                    >
-                      {complaint.status}
-                    </Badge>
-                  </div>
-                  
-                  <div className="space-y-2 text-sm">
-                    <div className="flex items-center text-muted-foreground">
-                      <MapPin className="h-4 w-4 mr-2" />
-                      {complaint.location}
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-muted-foreground">{complaint.id}</span>
+            {recentComplaints.length > 0 ? (
+              recentComplaints.map((complaint, index) => (
+                <Card key={index} className="hover:shadow-elegant transition-smooth">
+                  <CardContent className="p-6">
+                    <div className="flex justify-between items-start mb-3">
+                      <h3 className="font-semibold text-foreground">{complaint.title}</h3>
                       <Badge 
-                        variant="outline"
+                        variant="secondary"
                         className={
-                          complaint.priority === 'High' ? 'border-red-200 text-red-700' :
-                          'border-yellow-200 text-yellow-700'
+                          complaint.status === 'Resolved' ? 'bg-green-100 text-green-800' :
+                          complaint.status === 'In Progress' ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-blue-100 text-blue-800'
                         }
                       >
-                        {complaint.priority}
+                        {complaint.status}
                       </Badge>
                     </div>
-                    <p className="text-muted-foreground">{complaint.date}</p>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                    
+                    <div className="space-y-2 text-sm">
+                      <div className="flex items-center text-muted-foreground">
+                        <MapPin className="h-4 w-4 mr-2" />
+                        {complaint.location}
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground">{complaint.id}</span>
+                        <Badge 
+                          variant="outline"
+                          className={
+                            complaint.priority === 'High' ? 'border-red-200 text-red-700' :
+                            'border-yellow-200 text-yellow-700'
+                          }
+                        >
+                          {complaint.priority}
+                        </Badge>
+                      </div>
+                      <p className="text-muted-foreground">{complaint.date}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              <div className="col-span-3 text-center py-12">
+                <MessageSquare className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-foreground mb-2">No Complaints Yet</h3>
+                <p className="text-muted-foreground">Be the first to report an issue in your community!</p>
+              </div>
+            )}
           </div>
         </div>
       </section>
