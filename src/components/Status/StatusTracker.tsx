@@ -4,7 +4,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
-import { Search, Clock, CheckCircle, AlertCircle, User, Calendar, MapPin } from 'lucide-react';
+import { Search, Clock, CheckCircle, AlertCircle, User, Calendar, MapPin, Download, Phone } from 'lucide-react';
+import { toast } from '@/components/ui/use-toast';
 
 interface StatusStep {
   id: string;
@@ -96,14 +97,55 @@ const StatusTracker: React.FC = () => {
   };
 
   const handleSearch = () => {
-    if (!searchId.trim()) return;
+    if (!searchId.trim()) {
+      toast({
+        title: "Please enter a complaint ID",
+        description: "Enter your complaint ID to track status",
+        variant: "destructive"
+      });
+      return;
+    }
     
     setIsSearching(true);
     // Simulate API call
     setTimeout(() => {
-      setSearchResult(mockComplaint);
+      if (searchId.toLowerCase().includes('cr-')) {
+        setSearchResult(mockComplaint);
+        toast({
+          title: "Complaint Found",
+          description: "Your complaint details have been loaded",
+        });
+      } else {
+        setSearchResult(null);
+        toast({
+          title: "Complaint Not Found",
+          description: "Please check your complaint ID and try again",
+          variant: "destructive"
+        });
+      }
       setIsSearching(false);
     }, 1000);
+  };
+
+  const handleDownloadReport = () => {
+    toast({
+      title: "Downloading Report",
+      description: "Your complaint report is being prepared",
+    });
+  };
+
+  const handleContactOfficer = () => {
+    toast({
+      title: "Contacting Officer",
+      description: "You will be connected to the assigned officer",
+    });
+  };
+
+  const handleMarkSatisfied = () => {
+    toast({
+      title: "Thank You!",
+      description: "Your feedback has been recorded",
+    });
   };
 
   const getStatusColor = (status: string) => {
@@ -284,14 +326,17 @@ const StatusTracker: React.FC = () => {
 
           {/* Action Buttons */}
           <div className="flex justify-center space-x-4">
-            <Button variant="outline">
+            <Button variant="outline" onClick={handleDownloadReport}>
+              <Download className="h-4 w-4 mr-2" />
               Download Report
             </Button>
-            <Button variant="outline">
+            <Button variant="outline" onClick={handleContactOfficer}>
+              <Phone className="h-4 w-4 mr-2" />
               Contact Officer
             </Button>
             {searchResult.status === 'resolved' && (
-              <Button>
+              <Button onClick={handleMarkSatisfied}>
+                <CheckCircle className="h-4 w-4 mr-2" />
                 Mark as Satisfied
               </Button>
             )}

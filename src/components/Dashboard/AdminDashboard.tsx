@@ -16,8 +16,11 @@ import {
   Filter,
   Eye,
   MessageSquare,
-  Calendar
+  Calendar,
+  Download,
+  Bell
 } from 'lucide-react';
+import { toast } from '@/components/ui/use-toast';
 import ComplaintMap from '@/components/Map/ComplaintMap';
 
 interface DashboardStats {
@@ -100,6 +103,34 @@ const AdminDashboard: React.FC = () => {
     return matchesSearch && matchesStatus && matchesType;
   });
 
+  const handleExportReport = () => {
+    toast({
+      title: "Exporting Report",
+      description: "Your report is being prepared for download",
+    });
+  };
+
+  const handleSendNotifications = () => {
+    toast({
+      title: "Notifications Sent",
+      description: "Status updates have been sent to all relevant parties",
+    });
+  };
+
+  const handleViewComplaint = (complaintId: string) => {
+    toast({
+      title: "Opening Complaint",
+      description: `Loading details for complaint ${complaintId}`,
+    });
+  };
+
+  const handleUpdateComplaint = (complaintId: string) => {
+    toast({
+      title: "Update Complaint",
+      description: `Opening update form for complaint ${complaintId}`,
+    });
+  };
+
   const StatCard: React.FC<{
     title: string;
     value: number | string;
@@ -132,10 +163,12 @@ const AdminDashboard: React.FC = () => {
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Admin Dashboard</h1>
         <div className="flex space-x-4">
-          <Button variant="outline">
+          <Button variant="outline" onClick={handleExportReport}>
+            <Download className="h-4 w-4 mr-2" />
             Export Report
           </Button>
-          <Button>
+          <Button onClick={handleSendNotifications}>
+            <Bell className="h-4 w-4 mr-2" />
             Send Notifications
           </Button>
         </div>
@@ -305,11 +338,11 @@ const AdminDashboard: React.FC = () => {
                       </div>
                       
                       <div className="flex space-x-2">
-                        <Button variant="outline" size="sm">
+                        <Button variant="outline" size="sm" onClick={() => handleViewComplaint(complaint.id)}>
                           <Eye className="h-4 w-4 mr-2" />
                           View
                         </Button>
-                        <Button variant="outline" size="sm">
+                        <Button variant="outline" size="sm" onClick={() => handleUpdateComplaint(complaint.id)}>
                           <MessageSquare className="h-4 w-4 mr-2" />
                           Update
                         </Button>

@@ -6,7 +6,9 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Camera, MapPin, Upload, X } from 'lucide-react';
+import { Camera, MapPin, Upload, X, Loader2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { toast } from '@/components/ui/use-toast';
 import ComplaintMap from '@/components/Map/ComplaintMap';
 
 interface ComplaintFormProps {
@@ -31,16 +33,18 @@ const priorityLevels = [
 ];
 
 const ComplaintForm: React.FC<ComplaintFormProps> = ({ onSubmit, isSubmitting = false }) => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     type: '',
-    priority: '',
+    priority: 'medium' as 'low' | 'medium' | 'high',
     location: null as { lat: number; lng: number; address?: string } | null,
     photos: [] as File[]
   });
 
   const [showMap, setShowMap] = useState(false);
+  const [isSubmittingForm, setIsSubmittingForm] = useState(false);
 
   const handleLocationSelect = (lat: number, lng: number, address?: string) => {
     setFormData(prev => ({
@@ -64,20 +68,59 @@ const ComplaintForm: React.FC<ComplaintFormProps> = ({ onSubmit, isSubmitting = 
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.title || !formData.description || !formData.type || !formData.location) {
-      alert('Please fill all required fields and select a location');
+    if (!formData.title || !formData.description || !formData.type) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in all required fields",
+        variant: "destructive"
+      });
       return;
     }
 
-    onSubmit?.({
+    setIsSubmittingForm(true);
+    
+    const complaintData = {
       ...formData,
-      id: Date.now().toString(),
+      id: `CR-${Date.now()}`,
       status: 'submitted',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
+    };
+
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      onSubmit?.(complaintData);
+      
+      toast({
+        title: "Complaint Submitted Successfully!",
+        description: `Your complaint ID is: ${complaintData.id}`,
+      });
+      
+      // Navigate to tracking page
+      setTimeout(() => {
+        navigate('/track');
+      }, 1500);
+      
+    } catch (error) {
+      toast({
+        title: "Submission Failed",
+        description: "Please try again later",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmittingForm(false);
+    }
+  };
+
+  const handleSaveDraft = () => {
+    toast({
+      title: "Draft Saved",
+      description: "Your complaint has been saved as draft",
     });
   };
 
@@ -143,7 +186,7 @@ const ComplaintForm: React.FC<ComplaintFormProps> = ({ onSubmit, isSubmitting = 
                     className={`cursor-pointer transition-smooth ${
                       formData.priority === priority.value ? 'ring-2 ring-primary' : ''
                     }`}
-                    onClick={() => setFormData(prev => ({ ...prev, priority: priority.value }))}
+                    onClick={() => setFormData(prev => ({ ...prev, priority: priority.value as 'low' | 'medium' | 'high' }))}
                   >
                     {priority.label}
                   </Badge>
@@ -243,11 +286,12 @@ const ComplaintForm: React.FC<ComplaintFormProps> = ({ onSubmit, isSubmitting = 
 
             {/* Submit Button */}
             <div className="flex justify-end space-x-4 pt-6">
-              <Button type="button" variant="outline">
+              <Button type="button" variant="outline" onClick={handleSaveDraft}>
                 Save as Draft
               </Button>
-              <Button type="submit" disabled={isSubmitting} className="gradient-primary">
-                {isSubmitting ? 'Submitting...' : 'Submit Complaint'}
+              <Button type="submit" disabled={isSubmittingForm} className="gradient-primary">
+                {isSubmittingForm && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isSubmittingForm ? 'Submitting...' : 'Submit Complaint'}
               </Button>
             </div>
           </form>

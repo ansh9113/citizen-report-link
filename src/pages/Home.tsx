@@ -2,6 +2,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { useNavigate } from 'react-router-dom';
 import { 
   MessageSquare, 
   MapPin, 
@@ -12,12 +13,15 @@ import {
   ArrowRight,
   TrendingUp,
   Shield,
-  Bell
+  Bell,
+  Plus,
+  Search
 } from 'lucide-react';
 import Header from '@/components/Layout/Header';
 import Footer from '@/components/Layout/Footer';
 
 const Home: React.FC = () => {
+  const navigate = useNavigate();
   const stats = [
     { label: 'Total Complaints', value: '0', icon: MessageSquare, change: '+0%' },
     { label: 'Resolved Issues', value: '0', icon: CheckCircle, change: '+0%' },
@@ -67,11 +71,12 @@ const Home: React.FC = () => {
               in real-time. Building better cities through citizen participation.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" className="gradient-primary shadow-elegant">
+              <Button size="lg" className="gradient-primary shadow-elegant" onClick={() => navigate('/complaint')}>
+                <Plus className="mr-2 h-5 w-5" />
                 Report an Issue
-                <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
-              <Button size="lg" variant="outline">
+              <Button size="lg" variant="outline" onClick={() => navigate('/track')}>
+                <Search className="mr-2 h-5 w-5" />
                 Track Complaint
               </Button>
             </div>
@@ -207,12 +212,12 @@ const Home: React.FC = () => {
                 Report an issue today and see the change happen.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button size="lg" variant="secondary">
+                <Button size="lg" variant="secondary" onClick={() => navigate('/complaint')}>
                   Get Started
                 </Button>
-                <Button size="lg" variant="outline" className="border-primary-foreground text-primary-foreground hover:bg-primary-foreground hover:text-primary">
-                  <Phone className="mr-2 h-5 w-5" />
-                  Contact Support
+                <Button size="lg" variant="outline" className="border-primary-foreground text-primary-foreground hover:bg-primary-foreground hover:text-primary" onClick={() => navigate('/admin')}>
+                  <Shield className="mr-2 h-5 w-5" />
+                  Admin Dashboard
                 </Button>
               </div>
             </CardContent>

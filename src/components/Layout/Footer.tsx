@@ -1,6 +1,8 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const Footer: React.FC = () => {
+  const navigate = useNavigate();
   return (
     <footer className="bg-card border-t border-border mt-auto">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -21,10 +23,10 @@ const Footer: React.FC = () => {
           <div>
             <h3 className="font-medium mb-3">Quick Links</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><a href="#" className="hover:text-primary transition-smooth">Report Issue</a></li>
-              <li><a href="#" className="hover:text-primary transition-smooth">Track Status</a></li>
-              <li><a href="#" className="hover:text-primary transition-smooth">Help Center</a></li>
-              <li><a href="#" className="hover:text-primary transition-smooth">Contact Us</a></li>
+              <li><button onClick={() => navigate('/complaint')} className="hover:text-primary transition-smooth text-left">Report Issue</button></li>
+              <li><button onClick={() => navigate('/track')} className="hover:text-primary transition-smooth text-left">Track Status</button></li>
+              <li><button onClick={() => navigate('/admin')} className="hover:text-primary transition-smooth text-left">Admin Panel</button></li>
+              <li><a href="mailto:support@citizenreport.com" className="hover:text-primary transition-smooth">Contact Us</a></li>
             </ul>
           </div>
           
