@@ -1,151 +1,89 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
-import { Search, Clock, CheckCircle, AlertCircle, User, Calendar, MapPin, Download, Phone } from 'lucide-react';
-import { toast } from '@/components/ui/use-toast';
-
-interface StatusStep {
-  id: string;
-  title: string;
-  description: string;
-  completed: boolean;
-  timestamp?: string;
-  officer?: string;
-}
-
-interface Complaint {
-  id: string;
-  title: string;
-  description: string;
-  type: string;
-  status: 'submitted' | 'verified' | 'in-progress' | 'resolved' | 'closed';
-  priority: 'low' | 'medium' | 'high';
-  createdAt: string;
-  updatedAt: string;
-  location: {
-    lat: number;
-    lng: number;
-    address?: string;
-  };
-  steps: StatusStep[];
-  assignedOfficer?: string;
-  estimatedResolution?: string;
-}
+import { Search, Clock, CheckCircle, User, Calendar, MapPin, Download, Phone } from 'lucide-react';
+import { toast } from 'sonner';
+import { complaintService, Complaint } from '@/services/complaintService';
 
 const StatusTracker: React.FC = () => {
   const [searchId, setSearchId] = useState('');
   const [searchResult, setSearchResult] = useState<Complaint | null>(null);
   const [isSearching, setIsSearching] = useState(false);
 
-  // Mock data for demonstration
-  const mockComplaint: Complaint = {
-    id: 'CR-2024-001',
-    title: 'Pothole on Main Street',
-    description: 'Large pothole causing traffic issues near the market area',
-    type: 'road',
-    status: 'in-progress',
-    priority: 'high',
-    createdAt: '2024-01-15T10:00:00Z',
-    updatedAt: '2024-01-17T14:30:00Z',
-    location: {
-      lat: 22.7196,
-      lng: 75.8577,
-      address: 'Main Street, Near Central Market, Indore, MP'
-    },
-    assignedOfficer: 'Rajesh Kumar (PWD)',
-    estimatedResolution: '2024-01-20',
-    steps: [
-      {
-        id: '1',
-        title: 'Complaint Submitted',
-        description: 'Your complaint has been successfully submitted',
-        completed: true,
-        timestamp: '2024-01-15T10:00:00Z'
-      },
-      {
-        id: '2',
-        title: 'Verification',
-        description: 'Complaint verified by concerned department',
-        completed: true,
-        timestamp: '2024-01-16T09:30:00Z',
-        officer: 'Priya Sharma (Admin)'
-      },
-      {
-        id: '3',
-        title: 'Work in Progress',
-        description: 'Field team assigned and work has started',
-        completed: true,
-        timestamp: '2024-01-17T14:30:00Z',
-        officer: 'Rajesh Kumar (PWD)'
-      },
-      {
-        id: '4',
-        title: 'Resolution',
-        description: 'Issue resolved and awaiting final verification',
-        completed: false
-      },
-      {
-        id: '5',
-        title: 'Closed',
-        description: 'Complaint closed after successful resolution',
-        completed: false
-      }
-    ]
-  };
+  // Auto-refresh for real-time updates
+  useEffect(() => {
+    if (!searchResult) return;
 
-  const handleSearch = () => {
+    const intervalId = setInterval(async () => {
+      try {
+        // Silently refresh the specific complaint
+        const allComplaints = await complaintService.getAllComplaints();
+        const updated = allComplaints.find(c => c.id === searchResult.id);
+        if (updated && (updated.status !== searchResult.status || updated.updatedAt !== searchResult.updatedAt)) {
+          setSearchResult(updated);
+          toast.info("Complaint status updated!");
+        }
+      } catch (error) {
+        console.error("Auto-refresh failed", error);
+      }
+    }, 5000); // Check every 5 seconds
+
+    return () => clearInterval(intervalId);
+  }, [searchResult]);
+
+
+  const handleSearch = async () => {
     if (!searchId.trim()) {
-      toast({
-        title: "Please enter a complaint ID",
-        description: "Enter your complaint ID to track status",
-        variant: "destructive"
-      });
+      toast.error("Please enter a complaint ID");
       return;
     }
-    
+
     setIsSearching(true);
-    // Simulate API call
-    setTimeout(() => {
-      if (searchId.toLowerCase().includes('cr-')) {
-        setSearchResult(mockComplaint);
-        toast({
-          title: "Complaint Found",
-          description: "Your complaint details have been loaded",
-        });
+    try {
+      // Real service call setup:
+      // Since we don't have a direct getById exposed in the simple service, 
+      // we'll fetch all and find (or you can add getById to service).
+      // For now, let's assume we can fetch all and filter client-side 
+      // as this is a mock-backend app.
+      const allComplaints = await complaintService.getAllComplaints();
+      const found = allComplaints.find(c => c.id.toLowerCase() === searchId.toLowerCase());
+
+      if (found) {
+        setSearchResult(found);
+        toast.success("Complaint details loaded");
       } else {
         setSearchResult(null);
-        toast({
-          title: "Complaint Not Found",
-          description: "Please check your complaint ID and try again",
-          variant: "destructive"
-        });
+        toast.error("Complaint not found. Please check ID.");
       }
+    } catch (error) {
+      console.error("Search error", error);
+      toast.error("Failed to search complaint");
+    } finally {
       setIsSearching(false);
-    }, 1000);
+    }
   };
 
   const handleDownloadReport = () => {
-    toast({
-      title: "Downloading Report",
-      description: "Your complaint report is being prepared",
-    });
+    toast.info("Report download started...");
   };
 
   const handleContactOfficer = () => {
-    toast({
-      title: "Contacting Officer",
-      description: "You will be connected to the assigned officer",
-    });
+    toast.info("Connecting to officer...");
   };
 
-  const handleMarkSatisfied = () => {
-    toast({
-      title: "Thank You!",
-      description: "Your feedback has been recorded",
-    });
+  const handleMarkSatisfied = async () => {
+    if (!searchResult) return;
+    try {
+      await complaintService.updateStatus(searchResult.id, 'verified');
+      toast.success("Thank you! Complaint marked as verified.");
+      // Update local state immediately
+      setSearchResult(prev => prev ? { ...prev, status: 'verified' } : null);
+    } catch (error) {
+      toast.error("Failed to update status");
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -168,10 +106,22 @@ const StatusTracker: React.FC = () => {
     }
   };
 
-  const getProgressPercentage = (steps: StatusStep[]) => {
-    const completedSteps = steps.filter(step => step.completed).length;
-    return (completedSteps / steps.length) * 100;
+  // Helper to generate steps status based on current status
+  const getSteps = (status: string) => {
+    const statuses = ['submitted', 'in-progress', 'resolved', 'verified'];
+    const currentIdx = statuses.indexOf(status);
+
+    return [
+      { id: '1', title: 'Submitted', completed: true },
+      { id: '2', title: 'Processing', completed: currentIdx >= 1 },
+      { id: '3', title: 'Resolved', completed: currentIdx >= 2 },
+      { id: '4', title: 'Verified', completed: currentIdx >= 3 },
+    ];
   };
+
+  // Dynamic progress based on status
+  const dynamicSteps = searchResult ? getSteps(searchResult.status) : [];
+  const progressPercentage = (dynamicSteps.filter(s => s.completed).length / dynamicSteps.length) * 100;
 
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-6">
@@ -184,7 +134,7 @@ const StatusTracker: React.FC = () => {
           <div className="flex space-x-4">
             <div className="flex-1">
               <Input
-                placeholder="Enter your complaint ID (e.g., CR-2024-001)"
+                placeholder="Enter your complaint ID (e.g., CMP-XXXXXX)"
                 value={searchId}
                 onChange={(e) => setSearchId(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
@@ -230,36 +180,33 @@ const StatusTracker: React.FC = () => {
                     </p>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center space-x-2">
                   <User className="h-4 w-4 text-muted-foreground" />
                   <div>
-                    <p className="text-sm font-medium">Assigned Officer</p>
+                    <p className="text-sm font-medium">Reporter</p>
                     <p className="text-sm text-muted-foreground">
-                      {searchResult.assignedOfficer || 'Not assigned'}
+                      {searchResult.userName || 'Anonymous'}
                     </p>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center space-x-2">
                   <Clock className="h-4 w-4 text-muted-foreground" />
                   <div>
-                    <p className="text-sm font-medium">Expected Resolution</p>
+                    <p className="text-sm font-medium">Last Updated</p>
                     <p className="text-sm text-muted-foreground">
-                      {searchResult.estimatedResolution 
-                        ? new Date(searchResult.estimatedResolution).toLocaleDateString()
-                        : 'TBD'
-                      }
+                      {new Date(searchResult.updatedAt).toLocaleDateString()}
                     </p>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center space-x-2">
                   <MapPin className="h-4 w-4 text-muted-foreground" />
                   <div>
                     <p className="text-sm font-medium">Location</p>
                     <p className="text-sm text-muted-foreground">
-                      {searchResult.location.address || 'Location coordinates provided'}
+                      {searchResult.location?.address || 'Lat: ' + searchResult.location?.lat.toFixed(4)}
                     </p>
                   </div>
                 </div>
@@ -272,51 +219,34 @@ const StatusTracker: React.FC = () => {
             <CardHeader>
               <CardTitle>Progress Status</CardTitle>
               <div className="space-y-2">
-                <Progress value={getProgressPercentage(searchResult.steps)} className="w-full" />
+                <Progress value={progressPercentage} className="w-full" />
                 <p className="text-sm text-muted-foreground">
-                  {searchResult.steps.filter(step => step.completed).length} of {searchResult.steps.length} steps completed
+                  Current Status: {searchResult.status}
                 </p>
               </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
-                {searchResult.steps.map((step, index) => (
+                {dynamicSteps.map((step, index) => (
                   <div key={step.id} className="flex items-start space-x-4">
-                    <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
-                      step.completed 
-                        ? 'bg-primary text-primary-foreground' 
-                        : 'bg-muted text-muted-foreground border-2 border-border'
-                    }`}>
+                    <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${step.completed
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-muted text-muted-foreground border-2 border-border'
+                      }`}>
                       {step.completed ? (
                         <CheckCircle className="h-4 w-4" />
                       ) : (
                         <span className="text-sm font-medium">{index + 1}</span>
                       )}
                     </div>
-                    
+
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center space-x-2">
-                        <h3 className={`text-sm font-medium ${
-                          step.completed ? 'text-foreground' : 'text-muted-foreground'
-                        }`}>
+                        <h3 className={`text-sm font-medium ${step.completed ? 'text-foreground' : 'text-muted-foreground'
+                          }`}>
                           {step.title}
                         </h3>
-                        {step.completed && step.timestamp && (
-                          <span className="text-xs text-muted-foreground">
-                            {new Date(step.timestamp).toLocaleDateString()}
-                          </span>
-                        )}
                       </div>
-                      
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {step.description}
-                      </p>
-                      
-                      {step.officer && (
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Handled by: {step.officer}
-                        </p>
-                      )}
                     </div>
                   </div>
                 ))}
@@ -332,12 +262,12 @@ const StatusTracker: React.FC = () => {
             </Button>
             <Button variant="outline" onClick={handleContactOfficer}>
               <Phone className="h-4 w-4 mr-2" />
-              Contact Officer
+              Contact Helpdesk
             </Button>
             {searchResult.status === 'resolved' && (
               <Button onClick={handleMarkSatisfied}>
                 <CheckCircle className="h-4 w-4 mr-2" />
-                Mark as Satisfied
+                Verify Resolution
               </Button>
             )}
           </div>
@@ -350,7 +280,7 @@ const StatusTracker: React.FC = () => {
           <div className="text-center space-y-2">
             <h3 className="font-medium">Need Help?</h3>
             <p className="text-sm text-muted-foreground">
-              Can't find your complaint ID? Check your SMS/Email or contact support at 1800-XXX-XXXX
+              Can't find your complaint ID? Check your emails or contact support.
             </p>
           </div>
         </CardContent>

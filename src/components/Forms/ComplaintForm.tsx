@@ -8,8 +8,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Camera, MapPin, Upload, X, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
 import ComplaintMap from '@/components/Map/ComplaintMap';
+import { useAuth } from '@/context/AuthContext';
+import { complaintService } from '@/services/complaintService';
+import { emailService } from '@/services/emailService';
 
 interface ComplaintFormProps {
   onSubmit?: (complaint: any) => void;
@@ -68,50 +71,73 @@ const ComplaintForm: React.FC<ComplaintFormProps> = ({ onSubmit, isSubmitting = 
     }));
   };
 
+  const { user } = useAuth();
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
+    if (!user) {
+      toast.error("Please login to submit a complaint");
+      navigate('/login');
+      return;
+    }
+
     if (!formData.title || !formData.description || !formData.type) {
-      toast({
-        title: "Missing Information",
-        description: "Please fill in all required fields",
-        variant: "destructive"
-      });
+      toast.error("Please fill in all required fields");
+      return;
+    }
+
+    if (!formData.location) {
+      toast.error("Please select a location on the map");
       return;
     }
 
     setIsSubmittingForm(true);
-    
-    const complaintData = {
-      ...formData,
-      id: `CR-${Date.now()}`,
-      status: 'submitted',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      onSubmit?.(complaintData);
-      
-      toast({
-        title: "Complaint Submitted Successfully!",
-        description: `Your complaint ID is: ${complaintData.id}`,
+      // Create new complaint
+      const newComplaint = await complaintService.createComplaint({
+        userId: user.id,
+        userName: user.name,
+        title: formData.title,
+        description: formData.description,
+        type: formData.type,
+        priority: formData.priority,
+        location: formData.location,
+        photos: [], // Simplify for now, handling files is complex without backend
       });
-      
+
+      onSubmit?.(newComplaint);
+
+      toast.success(`Complaint Submitted! ID: ${newComplaint.id}`);
+
+      // Send Email Notification
+      try {
+        const emailResponse = await emailService.sendComplaintConfirmation({
+          to_name: user.name,
+          to_email: user.email || '',
+          complaint_id: newComplaint.id,
+          complaint_title: newComplaint.title,
+          complaint_status: newComplaint.status
+        });
+
+        if (emailResponse.status === 'mocked') {
+          toast.info("Email simulated (Configure EmailJS for real emails)");
+        } else {
+          toast.success("Confirmation email sent successfully!");
+        }
+      } catch (emailError) {
+        console.error("Failed to send email", emailError);
+        toast.warning("Complaint submitted, but failed to send confirmation email.");
+      }
+
       // Navigate to tracking page
       setTimeout(() => {
         navigate('/track');
-      }, 1500);
-      
-    } catch (error) {
-      toast({
-        title: "Submission Failed",
-        description: "Please try again later",
-        variant: "destructive"
-      });
+      }, 4000);
+
+    } catch (error: any) {
+      toast.error("Submission Failed: " + error.message);
     } finally {
       setIsSubmittingForm(false);
     }
@@ -146,7 +172,7 @@ const ComplaintForm: React.FC<ComplaintFormProps> = ({ onSubmit, isSubmitting = 
                   required
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="type">Issue Type *</Label>
                 <Select value={formData.type} onValueChange={(value) => setFormData(prev => ({ ...prev, type: value }))}>
@@ -183,9 +209,8 @@ const ComplaintForm: React.FC<ComplaintFormProps> = ({ onSubmit, isSubmitting = 
                   <Badge
                     key={priority.value}
                     variant={formData.priority === priority.value ? "default" : "secondary"}
-                    className={`cursor-pointer transition-smooth ${
-                      formData.priority === priority.value ? 'ring-2 ring-primary' : ''
-                    }`}
+                    className={`cursor-pointer transition-smooth ${formData.priority === priority.value ? 'ring-2 ring-primary' : ''
+                      }`}
                     onClick={() => setFormData(prev => ({ ...prev, priority: priority.value as 'low' | 'medium' | 'high' }))}
                   >
                     {priority.label}
@@ -208,7 +233,7 @@ const ComplaintForm: React.FC<ComplaintFormProps> = ({ onSubmit, isSubmitting = 
                   {showMap ? 'Hide Map' : 'Select Location'}
                 </Button>
               </div>
-              
+
               {formData.location && (
                 <div className="p-3 bg-muted rounded-lg">
                   <p className="text-sm text-muted-foreground">
@@ -219,7 +244,7 @@ const ComplaintForm: React.FC<ComplaintFormProps> = ({ onSubmit, isSubmitting = 
                   </p>
                 </div>
               )}
-              
+
               {showMap && (
                 <div className="mt-4">
                   <ComplaintMap
@@ -258,7 +283,7 @@ const ComplaintForm: React.FC<ComplaintFormProps> = ({ onSubmit, isSubmitting = 
                     {formData.photos.length}/3 photos uploaded
                   </span>
                 </div>
-                
+
                 {formData.photos.length > 0 && (
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                     {formData.photos.map((photo, index) => (
